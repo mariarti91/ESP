@@ -1,3 +1,5 @@
-build/Debug/Cygwin-Windows/main.o: main.cpp hash.h
+build/Debug/Cygwin-Windows/main.o: main.cpp getline.h bitArray.h
 
-hash.h:
+getline.h:
+
+bitArray.h:

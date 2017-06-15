@@ -9,25 +9,25 @@
             <url>main.cpp</url>
             <bookmark id="1">
                 <name/>
-                <line>260</line>
+                <line>39</line>
                 <key/>
             </bookmark>
             <bookmark id="3">
                 <name/>
-                <line>420</line>
+                <line>101</line>
                 <key/>
             </bookmark>
             <bookmark id="2">
                 <name/>
-                <line>579</line>
+                <line>259</line>
                 <key/>
             </bookmark>
         </file>
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Nikita/Documents/NetBeansProjects/Test/hash.h</file>
-            <file>file:/C:/Users/Nikita/Documents/NetBeansProjects/Test/hash.c</file>
+            <file>file:/C:/Users/Nikita/Documents/NetBeansProjects/Test/getline.h</file>
+            <file>file:/C:/Users/Nikita/Documents/NetBeansProjects/Test/bitArray.h</file>
         </group>
     </open-files>
 </project-private>
