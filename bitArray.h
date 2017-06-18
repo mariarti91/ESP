@@ -27,12 +27,12 @@ struct bitArray
 };
 
 int appendBits (struct bitArray *dest, struct bitArray src);
-int charToBitArray (struct bitArray *dest, char src[]);
+int charToBitArray (struct bitArray *dest, char src[], int len);
 uint32_t charToInt(char src[]);
 int firstCut(char dest[], struct bitArray *src, unsigned char reqBits);
 int bitArrayOffset(struct bitArray *src, uint32_t bitsCut, int lastIndex);
 int appendInt(struct bitArray *dest, int value); 
-int bitToChar(unsigned char string[], struct bitArray *src);
+int bitToChar(char string[], struct bitArray src, int len);
 int appendEspTrailer(struct bitArray *payload, unsigned char nextProtocol);
 int copyBitArray(struct bitArray *dest, struct bitArray src, int bitNum, int offset);//Добавление padding, padLength и nextHeader
 
@@ -119,22 +119,23 @@ int appendInt(struct bitArray *dest, int value)
     
 }
 
-int bitToChar(unsigned char string[], struct bitArray *src)
+int bitToChar(char string[], struct bitArray src, int len)
 {
     int i=0,k=0;
+    char temp1[len] = "";
     int temp;
-    while (i<= src->lastIndex)
+    while (i*4 < len)
     {
         k=0;
-        while (k < 4)
+        while ((k < 4)&(i*4 + k < len))
         {
-            temp = src->bits[i] >> (24 - k*8);
-            string[i*4 + k] = (unsigned char) temp;
+            temp = src.bits[i] >> (24 - k*8);
+            temp1[i*4 + k] = (unsigned char) temp;
             k++;
         }
         i++;
     }
-    
+    string = temp1;
     return 0;
 }
 
@@ -151,24 +152,26 @@ uint32_t charToInt(char src[])
     return temp;
             
 }
-int charToBitArray (struct bitArray *dest, char src[])
+int charToBitArray (struct bitArray *dest, char src[], int len)
 {
-    int i,j, len;
-    len = strlen(src);
+    int i,j,k,c;
     
     if (len == 0) return 10; //Error "Source is empty"
     
     j = 0; 
-    if ((len/4) != 0)
+    c = len/4;
+    if (c != 0)
     {
         while (j < len / 4 + 1)
         {
             int temp = 0;
             i = 0;
-            while (i<4)
+            k = j*4 + i;
+            while ((i<4)&(k < len))
             {
-                temp += src[j * 4 + i] << (3-i)*8;
+                temp += src[k] << (3-i)*8;
                 i++;
+                k++;
             }
             dest->bits[j] = temp;
             if (j < len / 4) 

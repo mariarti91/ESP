@@ -40,6 +40,8 @@ int seqN = 0;
 int main(int argc, char** argv) {
     
     char data[979] = ""; 
+    char test[24] = {0,0,0,0,0,0,0,0,17,17,17,17,0,0,0,0,0,0,0,0,'t','e','s','t'};
+    int len = sizeof(test);
     struct bitArray ipHeader = {{0,0,0x00110000,0,0},{32,32,32,32,32}, 5}; //Размер Ip header - 20 байт. Данный заголовок заполнен 0 кроме поля протокол (там стоит 17 - UDP)
     struct bitArray msg = {{0},{0}, 0}; 
     char strmode[3] = "";
@@ -47,7 +49,7 @@ int main(int argc, char** argv) {
     int err = getLine("Enter ESP mode:",strmode,sizeof(strmode));
     mode = atoi(strmode);
     err = getLine("Enter message:",data,sizeof(data));
-    charToBitArray (&msg, data);    
+    charToBitArray (&msg, test, sizeof(test));    
     appendBits(&ipHeader, msg);
     ESP_Protect(&ipHeader, mode);
     if (ESP_Process(&ipHeader, &msg) == 10) 
@@ -57,9 +59,14 @@ int main(int argc, char** argv) {
     else
     {
         int check = 0;
-        if (msg.lastSignificantBit[msg.lastIndex] > 0) check = 1; 
-        unsigned char string[msg.lastIndex + check] = {0};
-        bitToChar(string, &msg);
+        if (msg.lastSignificantBit[msg.lastIndex] > 0) 
+        {
+            check = msg.lastSignificantBit[msg.lastIndex] / 4; 
+            if (fmod(msg.lastSignificantBit[msg.lastIndex],4) > 0) check++;
+        }
+        check += msg.lastIndex*4;
+        char string[check] = {0};
+        bitToChar(string, msg, sizeof(string));
         const char * finalString = (const char *) string;
         printf("Received message:%s",finalString);
     }
@@ -121,9 +128,6 @@ int ESP_Protect(struct bitArray *message, int mode)
         appendInt(&payload, f_SPI);
         appendInt(&payload, seqN);
         appendBits(&payload, *message);  
-        struct bitArray temp = {{0},{0},0};
-        temp = *message;
-        decrypt(&temp, &nextProtocol);
         appendBits(&ipHeader, payload);
         
         //Изменение protocol на 50 - ESP
@@ -210,38 +214,38 @@ int decrypt (struct bitArray *payload, unsigned char *protocol) //Здесь ш�
     }
     
     *protocol = payload->bits[payload->lastIndex];
-    int padLength = (payload->bits[payload->lastIndex]) >> 8;
+    int padLength = (payload->bits[payload->lastIndex - 1]) >> 8;
     
     if (padLength < 16)
     {
-        payload->bits[payload->lastIndex] >>= padLength + 16;
-        payload->bits[payload->lastIndex] <<= padLength + 16;
-        payload->lastSignificantBit[payload->lastIndex] = 32 - padLength + 16;
+        payload->bits[payload->lastIndex - 1] >>= padLength + 16;
+        payload->bits[payload->lastIndex - 1] <<= padLength + 16;
+        payload->lastSignificantBit[payload->lastIndex - 1] = 32 - padLength - 16;
     }
     if (padLength == 16)
     {
-        payload->bits[payload->lastIndex] = 0;
-        payload->lastSignificantBit[payload->lastIndex] = 0;
+        payload->bits[payload->lastIndex - 1] = 0;
+        payload->lastSignificantBit[payload->lastIndex - 1] = 0;
         payload->lastIndex--;
     }
     if (padLength > 16)
     {
         
-        payload->bits[payload->lastIndex] = 0;
-        payload->lastSignificantBit[payload->lastIndex] = 0;
+        payload->bits[payload->lastIndex-1] = 0;
+        payload->lastSignificantBit[payload->lastIndex-1] = 0;
         payload->lastIndex--;
         padLength -= 16;
         while (padLength >= 32)
         {
-            payload->bits[payload->lastIndex] = 0;
-            payload->lastSignificantBit[payload->lastIndex] = 0;
+            payload->bits[payload->lastIndex-1] = 0;
+            payload->lastSignificantBit[payload->lastIndex-1] = 0;
             payload->lastIndex--;
             padLength -= 32;
         }
         if (padLength > 0)
         {
-            payload->bits[payload->lastIndex] >>= padLength;
-            payload->bits[payload->lastIndex] <<= padLength;
+            payload->bits[payload->lastIndex - 1] >>= padLength;
+            payload->bits[payload->lastIndex - 1] <<= padLength;
             payload->lastSignificantBit[payload->lastIndex] = 32 - padLength;
         }
     }
@@ -251,13 +255,17 @@ int decrypt (struct bitArray *payload, unsigned char *protocol) //Здесь ш�
 int integrityFunction (struct bitArray payload, uint32_t *hash)
 {
     int check = 0;
-    if (payload.lastSignificantBit[payload.lastIndex] > 0) check = 1; 
-    unsigned char string[payload.lastIndex + check] = {0};
-    bitToChar(string, &payload);
+    if (payload.lastSignificantBit[payload.lastIndex] > 0) 
+        {
+            check = payload.lastSignificantBit[payload.lastIndex] / 4; 
+            if (fmod(payload.lastSignificantBit[payload.lastIndex],4) > 0) check++;
+        }
+    char string[payload.lastIndex*4 + check] = {0};
+    bitToChar(string, payload, sizeof(string));
     *hash = 0x12345678; // Надо сюда вставить работающую хэш-функцию
 }
 
-ESP_Process(struct bitArray *message, struct bitArray *payload)
+int ESP_Process(struct bitArray *message, struct bitArray *payload)
 {
     struct bitArray ipHeader = {{0},{0}, 0};
     copyBitArray(&ipHeader, *message, 160, 0);
@@ -328,44 +336,44 @@ ESP_Process(struct bitArray *message, struct bitArray *payload)
         ipHeader.bits[2] |= temp;
         
     }
-    
+    return 0;
     
 }
 
 int removePadding(struct bitArray *data)
 {
-    int padLength = (data->bits[data->lastIndex] & 0x0000ff00) >> 8;
-
+    int padLength = (data->bits[data->lastIndex - 1]) >> 8;
+    
     if (padLength < 16)
     {
-        data->bits[data->lastIndex] >>= padLength + 16;
-        data->bits[data->lastIndex] <<= padLength + 16;
-        data->lastSignificantBit[data->lastIndex] = 32 - padLength + 16;
+        data->bits[data->lastIndex - 1] >>= padLength + 16;
+        data->bits[data->lastIndex - 1] <<= padLength + 16;
+        data->lastSignificantBit[data->lastIndex - 1] = 32 - padLength - 16;
     }
     if (padLength == 16)
     {
-        data->bits[data->lastIndex] = 0;
-        data->lastSignificantBit[data->lastIndex] = 0;
+        data->bits[data->lastIndex - 1] = 0;
+        data->lastSignificantBit[data->lastIndex - 1] = 0;
         data->lastIndex--;
     }
     if (padLength > 16)
     {
-
-        data->bits[data->lastIndex] = 0;
-        data->lastSignificantBit[data->lastIndex] = 0;
+        
+        data->bits[data->lastIndex-1] = 0;
+        data->lastSignificantBit[data->lastIndex-1] = 0;
         data->lastIndex--;
         padLength -= 16;
         while (padLength >= 32)
         {
-            data->bits[data->lastIndex] = 0;
-            data->lastSignificantBit[data->lastIndex] = 0;
+            data->bits[data->lastIndex-1] = 0;
+            data->lastSignificantBit[data->lastIndex-1] = 0;
             data->lastIndex--;
             padLength -= 32;
         }
         if (padLength > 0)
         {
-            data->bits[data->lastIndex] >>= padLength;
-            data->bits[data->lastIndex] <<= padLength;
+            data->bits[data->lastIndex - 1] >>= padLength;
+            data->bits[data->lastIndex - 1] <<= padLength;
             data->lastSignificantBit[data->lastIndex] = 32 - padLength;
         }
     }
