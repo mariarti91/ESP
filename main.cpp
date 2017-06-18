@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
     int err = getLine("Enter ESP mode:",strmode,sizeof(strmode));
     mode = atoi(strmode);
     err = getLine("Enter message:",data,sizeof(data));
-    charToBitArray (&msg, test, sizeof(test));    
+    //charToBitArray (&msg, data, strlen(data));    
+    charToBitArray (&msg, test, sizeof(test));  
     appendBits(&ipHeader, msg);
     ESP_Protect(&ipHeader, mode);
     if (ESP_Process(&ipHeader, &msg) == 10) 
@@ -64,13 +65,12 @@ int main(int argc, char** argv) {
             if (fmod(msg.lastSignificantBit[msg.lastIndex],8) > 0) check++;
         }
         check += msg.lastIndex*4;
-        char string[check] = {0};
-        char *ptr = string;
-        bitToChar(ptr, msg, sizeof(string));
+        char *string = (char *) malloc(check);
+        memset(string, 0, check);
+        bitToChar(string, msg, check);
         const char * finalString = (const char *) string;
-        printf("Received message:%s",finalString);
+        printf("Received message:%s \n",finalString);
     }
-    
     return 0;
 }
 

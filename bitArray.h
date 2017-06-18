@@ -130,7 +130,7 @@ int bitToChar(char *string, struct bitArray src, int len)
         while ((k < 4)&(i*4 + k < len))
         {
             temp = src.bits[i] >> (24 - k*8);
-            temp1[i*4 + k] = (unsigned char) temp;
+            temp1[i*4 + k] = (char) temp;
             k++;
         }
         i++;
@@ -174,7 +174,7 @@ int charToBitArray (struct bitArray *dest, char src[], int len)
             k = j*4 + i;
             while ((i<4)&(k < len))
             {
-                temp += src[k] << (3-i)*8;
+                temp += (unsigned char) src[k] << (3-i)*8;
                 i++;
                 k++;
             }
@@ -196,7 +196,7 @@ int charToBitArray (struct bitArray *dest, char src[], int len)
         i = 0;
         while (i<len)
         {
-            temp += src[j + i] << (3-i)*8;
+            temp += (unsigned char) src[j + i] << (3-i)*8;
             i++;
         }
         dest->bits[j] = temp;
