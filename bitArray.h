@@ -32,7 +32,7 @@ uint32_t charToInt(char src[]);
 int firstCut(char dest[], struct bitArray *src, unsigned char reqBits);
 int bitArrayOffset(struct bitArray *src, uint32_t bitsCut, int lastIndex);
 int appendInt(struct bitArray *dest, int value); 
-int bitToChar(char string[], struct bitArray src, int len);
+//int bitToChar(char * string, struct bitArray src, int len);
 int appendEspTrailer(struct bitArray *payload, unsigned char nextProtocol);
 int copyBitArray(struct bitArray *dest, struct bitArray src, int bitNum, int offset);//Добавление padding, padLength и nextHeader
 
@@ -119,10 +119,10 @@ int appendInt(struct bitArray *dest, int value)
     
 }
 
-int bitToChar(char string[], struct bitArray src, int len)
+int bitToChar(char *string, struct bitArray src, int len)
 {
     int i=0,k=0;
-    char temp1[len] = "";
+    char temp1[len] = {0};
     int temp;
     while (i*4 < len)
     {
@@ -135,7 +135,12 @@ int bitToChar(char string[], struct bitArray src, int len)
         }
         i++;
     }
-    string = temp1;
+    i = 0;
+    while (i < len)
+    {
+        string[i] = temp1[i];
+        i++;
+    }
     return 0;
 }
 

@@ -36,7 +36,6 @@ int removePadding(struct bitArray *data);
 int seqN = 0;
 
 
-
 int main(int argc, char** argv) {
     
     char data[979] = ""; 
@@ -61,15 +60,17 @@ int main(int argc, char** argv) {
         int check = 0;
         if (msg.lastSignificantBit[msg.lastIndex] > 0) 
         {
-            check = msg.lastSignificantBit[msg.lastIndex] / 4; 
-            if (fmod(msg.lastSignificantBit[msg.lastIndex],4) > 0) check++;
+            check = msg.lastSignificantBit[msg.lastIndex] / 8; 
+            if (fmod(msg.lastSignificantBit[msg.lastIndex],8) > 0) check++;
         }
         check += msg.lastIndex*4;
         char string[check] = {0};
-        bitToChar(string, msg, sizeof(string));
+        char *ptr = string;
+        bitToChar(ptr, msg, sizeof(string));
         const char * finalString = (const char *) string;
         printf("Received message:%s",finalString);
     }
+    
     return 0;
 }
 
@@ -246,7 +247,8 @@ int decrypt (struct bitArray *payload, unsigned char *protocol) //Здесь ш�
         {
             payload->bits[payload->lastIndex - 1] >>= padLength;
             payload->bits[payload->lastIndex - 1] <<= padLength;
-            payload->lastSignificantBit[payload->lastIndex] = 32 - padLength;
+            payload->lastSignificantBit[payload->lastIndex - 1] = 32 - padLength;
+            payload->lastIndex--;
         }
     }
     return 0;
