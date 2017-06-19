@@ -36,6 +36,35 @@ int appendInt(struct bitArray *dest, int value);
 int appendEspTrailer(struct bitArray *payload, unsigned char nextProtocol);
 int copyBitArray(struct bitArray *dest, struct bitArray src, int bitNum, int offset);//Добавление padding, padLength и nextHeader
 
+void printBitString(char * string, int len)
+{
+    int i = 0,  k, check = 0;
+    printf("Received message:\n");
+    while (i < len)
+    {
+        k = 0;
+        unsigned char temp;
+        while (k < 8)
+        {
+            temp = string[i + check];
+            temp <<= k;
+            temp >>= 7;
+            unsigned char temp1 = (int) temp + '0';
+            printf("%c ",temp1);
+            k++;
+        }
+        
+        i++;
+        if (i==4)
+        {
+            printf("\n");
+            i -= 4;
+            len -= 4;
+            check += 4;
+        }
+    }
+}
+
 int copyBitArray(struct bitArray *dest, struct bitArray src, int bitNum, int offset)
 {
 
@@ -123,6 +152,7 @@ int bitToChar(char *string, struct bitArray src, int len)
 {
     int i=0,k=0;
     char temp1[len] = {0};
+    char temp2[len] = {0};
     int temp;
     while (i*4 < len)
     {
@@ -139,8 +169,10 @@ int bitToChar(char *string, struct bitArray src, int len)
     while (i < len)
     {
         string[i] = temp1[i];
+        temp2[i] = string[i];
         i++;
     }
+    i = 0;
     return 0;
 }
 

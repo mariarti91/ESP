@@ -36,6 +36,7 @@ int removePadding(struct bitArray *data);
 int seqN = 0;
 
 
+
 int main(int argc, char** argv) {
     
     char data[979] = ""; 
@@ -48,8 +49,8 @@ int main(int argc, char** argv) {
     int err = getLine("Enter ESP mode:",strmode,sizeof(strmode));
     mode = atoi(strmode);
     err = getLine("Enter message:",data,sizeof(data));
-    //charToBitArray (&msg, data, strlen(data));    
-    charToBitArray (&msg, test, sizeof(test));  
+    charToBitArray (&msg, data, strlen(data));    
+    //charToBitArray (&msg, test, sizeof(test));  
     appendBits(&ipHeader, msg);
     ESP_Protect(&ipHeader, mode);
     if (ESP_Process(&ipHeader, &msg) == 10) 
@@ -68,8 +69,7 @@ int main(int argc, char** argv) {
         char *string = (char *) malloc(check);
         memset(string, 0, check);
         bitToChar(string, msg, check);
-        const char * finalString = (const char *) string;
-        printf("Received message:%s \n",finalString);
+        printBitString(string, check);
     }
     return 0;
 }
@@ -206,22 +206,21 @@ int encrypt (struct bitArray *payload) //Здесь шифрование для 
 int decrypt (struct bitArray *payload, unsigned char *protocol) //Здесь шифрование для галочки, потом надо заменить
 {
     int i = 0;
-    bool check = 1;
-    if (payload->lastSignificantBit[payload->lastIndex] > 0) check = 0; 
-    while (i<= (payload->lastIndex - check))
+    while (i<= (payload->lastIndex - 1))
     {
         payload->bits[i] -= 0x12345678;
         i++;
     }
     
-    *protocol = payload->bits[payload->lastIndex];
-    int padLength = (payload->bits[payload->lastIndex - 1]) >> 8;
+    *protocol = payload->bits[payload->lastIndex - 1];
+    unsigned char padLength = (payload->bits[payload->lastIndex - 1]) >> 8;
     
     if (padLength < 16)
     {
         payload->bits[payload->lastIndex - 1] >>= padLength + 16;
         payload->bits[payload->lastIndex - 1] <<= padLength + 16;
         payload->lastSignificantBit[payload->lastIndex - 1] = 32 - padLength - 16;
+        payload->lastIndex--;
     }
     if (padLength == 16)
     {
@@ -344,7 +343,7 @@ int ESP_Process(struct bitArray *message, struct bitArray *payload)
 
 int removePadding(struct bitArray *data)
 {
-    int padLength = (data->bits[data->lastIndex - 1]) >> 8;
+    unsigned char padLength = (data->bits[data->lastIndex - 1]) >> 8;
     
     if (padLength < 16)
     {
