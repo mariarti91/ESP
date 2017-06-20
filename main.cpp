@@ -61,8 +61,6 @@ int unpackEsp(char * dest, char * src, int size) {
         return -1;
     } else {
         int check = getBitArraySize(&resMsg);
-        dest = (char *) malloc (size);
-        memset(dest, 0, size);
         bitToChar(dest, resMsg, check);
         printBitString(dest, check);
         return check;
@@ -78,15 +76,9 @@ int getEspPack(char * dest, char * src, int mode, int size) {
     //charToBitArray (&msg, test, sizeof(test));  
     ESP_Protect(&msg, mode);
     int check = getBitArraySize(&msg);
-    dest = (char *) malloc(check);
-    memset(dest, 0, check);
     bitToChar(dest, msg, check);
     printBitString(dest, check);
     printHex(dest, check);
-    
-    char * dest2;
-
-    int newNewSize = unpackEsp(dest2, dest, check);
     return check;
 }
 
@@ -110,11 +102,11 @@ int main(int argc, char** argv) {
     int err = getLine("Enter ESP mode:", strmode, sizeof (strmode));
     mode = atoi(strmode);
     
-    char * dest;
+    char * dest = (char *)malloc(2000);
 
     int newSize = getEspPack(dest, test, mode, TestSize);
 
-    char * dest2;
+    char * dest2 = (char *)malloc(2000);
 
     int newNewSize = unpackEsp(dest2, dest, newSize);
     //    struct bitArray recMsg = {{0},{0}, 0};
